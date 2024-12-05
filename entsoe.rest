@@ -1,0 +1,8 @@
+# domain BZN|10YFI-1--------U
+
+
+GET https://web-api.tp.entsoe.eu/api?documentType=A44&out_Domain=10YAT-APG------L&in_Domain=10YAT-APG------L&periodStart=202407272200&periodEnd=202407282200&securityToken=04c020d8-7eff-41f7-9004-14bcd332e540
+
+#
+
+GET https://web-api.tp.entsoe.eu/api?documentType=A44&contract_MarketAgreement.type=A01&periodStart=202412050000&periodEnd=202412060000&out_Domain=10YFI-1--------U&in_Domain=10YFI-1--------U&securityToken=04c020d8-7eff-41f7-9004-14bcd332e540
