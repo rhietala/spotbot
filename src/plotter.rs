@@ -37,7 +37,7 @@ pub fn calculate_limits(aggregates: &Aggregates) -> (Range<f32>, f32, f32) {
         0.0
     };
 
-    (chart_min..chart_max, max_y * 0.2, max_y * 0.8)
+    (chart_min..chart_max, 5.0, 20.0)
 }
 
 pub fn plot(
@@ -69,7 +69,7 @@ pub fn plot(
         .configure_mesh()
         .label_style(label_style.clone())
         .axis_desc_style(label_style)
-        .y_desc("hinta c/kWh")
+        .y_desc("hinta c/kWh (sis. alv. 25,5%)")
         .x_desc("tunti")
         .x_labels(24)
         .y_labels(10)

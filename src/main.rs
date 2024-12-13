@@ -1,6 +1,8 @@
+use bsky_sdk::BskyAgent;
 use chrono::{DateTime, Datelike, Duration, NaiveDate, Utc};
 use chrono_tz::Europe::Helsinki;
 use dotenv::dotenv;
+use poster::check_post_exists;
 use std::env;
 
 mod entsoe;
@@ -68,6 +70,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let bluesky_username = env::var("BLUESKY_USERNAME").expect("BLUESKY_USERNAME must be set");
     let bluesky_password = env::var("BLUESKY_PASSWORD").expect("BLUESKY_PASSWORD must be set");
 
+    let agent = BskyAgent::builder().build().await?;
+    let session = agent.login(bluesky_username, bluesky_password).await?;
+    let title = get_title(&day);
+
+    if check_post_exists(&agent, &session, &title).await? {
+        println!("Post already exists, skipping");
+        return Ok(());
+    }
+
     println!("Fetching prices from entsoe");
     let prices_xml = entsoe::get_spot_prices(&entsoe_apikey, day).await;
 
@@ -79,7 +90,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let prices = prices
         .into_iter()
         .filter(|(ts, _)| ts.with_timezone(&Helsinki).date_naive() == day)
-        .map(|(ts, price)| (ts, price * 100.0 / 1000.0)) // convert €/MWh to c / kWh
+        // convert €/MWh to c/kWh, add VAT 25,5%
+        .map(|(ts, price)| (ts, price * 100.0 / 1000.0 * 1.255))
         .collect::<Vec<_>>();
 
     let aggregates = calculate_aggregates(&prices);
@@ -89,14 +101,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     plotter::plot(PLOT_FILENAME, &prices, &aggregates, &title).unwrap();
 
     println!("Posting to bluesky");
-    poster::post(
-        &bluesky_username,
-        &bluesky_password,
-        PLOT_FILENAME,
-        &aggregates,
-        &title,
-    )
-    .await?;
+    poster::post(&agent, PLOT_FILENAME, &aggregates, &title).await?;
 
     Ok(())
 }
