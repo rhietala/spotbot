@@ -110,7 +110,7 @@ pub async fn post(
 
     let text_vat = if vat > 0.0 {
         format!(
-            "{} {} %",
+            "\n\n{} {} %",
             localization.post_vat,
             format!("{:.1}", vat).replace(".", localization.num_locale.decimal())
         )

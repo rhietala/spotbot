@@ -44,7 +44,6 @@ pub fn plot(
     data: &[(DateTime<Utc>, f32)],
     aggregates: &Aggregates,
     title: &String,
-    vat: f32,
     localization: &Localization,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let root = BitMapBackend::new(filename, (1024, 1024)).into_drawing_area();
@@ -62,22 +61,12 @@ pub fn plot(
 
     let label_style = ("sans-serif", 25).into_font();
 
-    let vat_str = if vat > 0.0 {
-        format!(
-            " ({} {} %)",
-            localization.includes_vat,
-            format!("{:.1}", vat).replace(".", localization.num_locale.decimal())
-        )
-    } else {
-        "".to_string()
-    };
-
     // Configure the mesh
     chart
         .configure_mesh()
         .label_style(label_style.clone())
         .axis_desc_style(label_style)
-        .y_desc(format!("{}{}", localization.plot_y_desc, &vat_str))
+        .y_desc(localization.plot_y_desc)
         .x_desc(localization.plot_x_desc)
         .x_labels(24)
         .y_labels(10)
