@@ -85,14 +85,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Parsing prices");
     let prices = parser::parse_xml(prices_xml);
 
-    assert!(!prices.is_empty());
-
     let prices = prices
         .into_iter()
         .filter(|(ts, _)| ts.with_timezone(&Helsinki).date_naive() == day)
         // convert €/MWh to c/kWh, add VAT 25,5%
         .map(|(ts, price)| (ts, price * 100.0 / 1000.0 * 1.255))
         .collect::<Vec<_>>();
+
+    assert!(
+        23 <= prices.len() && prices.len() <= 25,
+        "Expected 23..25 price points, got {}",
+        prices.len()
+    );
 
     let aggregates = calculate_aggregates(&prices);
     let title = get_title(&day);
