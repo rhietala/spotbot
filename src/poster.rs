@@ -15,12 +15,12 @@ use bsky_sdk::{
 use chrono::{DateTime, Duration, Timelike, Utc};
 use chrono_tz::Europe::Helsinki;
 
-use crate::{Aggregates, Title};
+use crate::{Aggregates, Localization};
 
 pub async fn check_post_exists(
     agent: &BskyAgent,
     session: &Object<OutputData>,
-    title: &Title,
+    title: &String,
 ) -> Result<bool, Box<dyn std::error::Error>> {
     let own_posts_feed = agent
         .api
@@ -48,7 +48,7 @@ pub async fn check_post_exists(
                 Unknown::Object(r) => {
                     match r.get_key_value("text") {
                         Some((_, x)) => {
-                            if format!("{:?}", x).contains(&title.date) {
+                            if format!("{:?}", x).contains(title) {
                                 return true;
                             }
                         }
@@ -66,7 +66,9 @@ pub async fn post(
     agent: &BskyAgent,
     image_filename: &str,
     aggregates: &Aggregates,
-    title: &Title,
+    localization: &Localization,
+    day_title: &String,
+    vat: f32,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let image_bytes = std::fs::read(image_filename)?;
 
@@ -86,27 +88,38 @@ pub async fn post(
         format!("{:02}-{:02}", ts1.hour(), ts2.hour())
     };
 
-    let text_header = format!(
-        "Pörssisähkön spot-hinnat {}na {}",
-        title.weekday, title.date
-    );
-    let text_avg = format!("Keskihinta: {:.2} c/kWh", aggregates.avg).replace(".", ",");
+    let text_header = format!("{} {}", localization.post_title, day_title);
+    let text_avg = format!("{}: {:.2} c/kWh", localization.post_avg, aggregates.avg)
+        .replace(".", localization.num_locale.decimal());
     let text_min = format!(
-        "Minimi: {:.2} c/kWh (klo {})",
+        "{}: {:.2} c/kWh ({} {})",
+        localization.post_min,
         aggregates.min.1,
+        localization.post_at,
         timerange(aggregates.min.0)
     )
-    .replace(".", ",");
+    .replace(".", localization.num_locale.decimal());
     let text_max = format!(
-        "Maksimi: {:.2} c/kWh (klo {})",
+        "{}: {:.2} c/kWh ({} {})",
+        localization.post_max,
         aggregates.max.1,
+        localization.post_at,
         timerange(aggregates.max.0)
     )
-    .replace(".", ",");
-    let text_vat = "Hinnat sisältävät alv. 25,5%";
+    .replace(".", localization.num_locale.decimal());
+
+    let text_vat = if vat > 0.0 {
+        format!(
+            "{} {} %",
+            localization.post_vat,
+            format!("{:.1}", vat).replace(".", localization.num_locale.decimal())
+        )
+    } else {
+        "".to_string()
+    };
 
     let text = format!(
-        "{}\n\n{}\n{}\n{}\n\n{}",
+        "{}\n\n{}\n{}\n{}{}",
         text_header, text_avg, text_min, text_max, text_vat
     );
 

@@ -1,10 +1,9 @@
 use std::ops::Range;
 
 use chrono::{DateTime, Timelike, Utc};
-use chrono_tz::Europe::Helsinki;
 use plotters::{define_color, doc, prelude::*};
 
-use crate::{Aggregates, Title};
+use crate::{Aggregates, Localization};
 
 define_color!(NORMAL, 211, 210, 71, "Normal price color");
 define_color!(HIGH, 211, 186, 71, "High");
@@ -41,10 +40,12 @@ pub fn calculate_limits(aggregates: &Aggregates) -> (Range<f32>, f32, f32) {
 }
 
 pub fn plot(
-    filename: &str,
+    filename: &String,
     data: &[(DateTime<Utc>, f32)],
     aggregates: &Aggregates,
-    title: &Title,
+    title: &String,
+    vat: f32,
+    localization: &Localization,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let root = BitMapBackend::new(filename, (1024, 1024)).into_drawing_area();
     root.fill(&WHITE)?;
@@ -53,10 +54,7 @@ pub fn plot(
 
     // Create a chart builder
     let mut chart = ChartBuilder::on(&root)
-        .caption(
-            format!("{} {}", title.weekday, title.date),
-            ("sans-serif", 50).into_font(),
-        )
+        .caption(title, ("sans-serif", 50).into_font())
         .margin(30)
         .x_label_area_size(60)
         .y_label_area_size(70)
@@ -64,13 +62,23 @@ pub fn plot(
 
     let label_style = ("sans-serif", 25).into_font();
 
+    let vat_str = if vat > 0.0 {
+        format!(
+            " ({} {} %)",
+            localization.includes_vat,
+            format!("{:.1}", vat).replace(".", localization.num_locale.decimal())
+        )
+    } else {
+        "".to_string()
+    };
+
     // Configure the mesh
     chart
         .configure_mesh()
         .label_style(label_style.clone())
         .axis_desc_style(label_style)
-        .y_desc("hinta c/kWh (sis. alv. 25,5%)")
-        .x_desc("tunti")
+        .y_desc(format!("{}{}", localization.plot_y_desc, &vat_str))
+        .x_desc(localization.plot_x_desc)
         .x_labels(24)
         .y_labels(10)
         .y_max_light_lines(0)
@@ -79,7 +87,7 @@ pub fn plot(
 
     // Plot the data
     chart.draw_series(data.iter().map(|(ts, value)| {
-        let x = ts.with_timezone(&Helsinki).hour() as i32;
+        let x = ts.with_timezone(&localization.timezone).hour() as i32;
 
         let mut bar = Rectangle::new(
             [

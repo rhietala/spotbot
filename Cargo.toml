@@ -5,10 +5,11 @@ edition = "2021"
 
 [dependencies]
 bsky-sdk = "0.1.13"
-chrono = "0.4.38"
+chrono = { version = "0.4.38", features = ["unstable-locales"] }
 chrono-tz = "0.10.0"
 dotenv = "0.15.0"
+num-format = "0.4.4"
 plotters = "0.3.3"
 reqwest = { version = "0.12.9" }
-tokio = { version = "1.42.0", features = ["full"]}
+tokio = { version = "1.42.0", features = ["full"] }
 xml-rs = "0.8.24"
