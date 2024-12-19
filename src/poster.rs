@@ -89,20 +89,25 @@ pub async fn post(
     };
 
     let text_header = format!("{} {}", localization.post_title, day_title);
-    let text_avg = format!("{}: {:.2} c/kWh", localization.post_avg, aggregates.avg)
-        .replace(".", localization.num_locale.decimal());
+    let text_avg = format!(
+        "{}: {:.2} {}/kWh",
+        localization.post_avg, aggregates.avg, localization.currency_name
+    )
+    .replace(".", localization.num_locale.decimal());
     let text_min = format!(
-        "{}: {:.2} c/kWh ({} {})",
+        "{}: {:.2} {}/kWh ({} {})",
         localization.post_min,
         aggregates.min.1,
+        localization.currency_name,
         localization.post_at,
         timerange(aggregates.min.0)
     )
     .replace(".", localization.num_locale.decimal());
     let text_max = format!(
-        "{}: {:.2} c/kWh ({} {})",
+        "{}: {:.2} {}/kWh ({} {})",
         localization.post_max,
         aggregates.max.1,
+        localization.currency_name,
         localization.post_at,
         timerange(aggregates.max.0)
     )
@@ -126,6 +131,8 @@ pub async fn post(
     let embed = Some(Union::Refs(RecordEmbedRefs::AppBskyEmbedImagesMain(
         Box::new(MainData { images }.into()),
     )));
+
+    println!("Posting: {}", text);
 
     agent
         .create_record(RecordData {

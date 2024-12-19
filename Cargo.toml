@@ -11,5 +11,7 @@ dotenv = "0.15.0"
 num-format = "0.4.4"
 plotters = "0.3.3"
 reqwest = { version = "0.12.9" }
+serde = { version = "1.0.216", features = ["derive"] }
+serde_json = "1.0.133"
 tokio = { version = "1.42.0", features = ["full"] }
 xml-rs = "0.8.24"

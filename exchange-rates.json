@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "last_updated_at": "2024-12-14T23:59:59Z"
+  },
+  "data": {
+    "DKK": {
+      "code": "DKK",
+      "value": 7.4593212701
+    },
+    "NOK": {
+      "code": "NOK",
+      "value": 11.7057405662
+    },
+    "SEK": {
+      "code": "SEK",
+      "value": 11.5272519915
+    }
+  }
+}

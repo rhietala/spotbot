@@ -19,24 +19,33 @@ fn color_by_value(value: f32, high: f32, low: f32) -> ShapeStyle {
     }
 }
 
-pub fn calculate_limits(aggregates: &Aggregates) -> (Range<f32>, f32, f32) {
+pub fn calculate_limits(
+    aggregates: &Aggregates,
+    localization: &Localization,
+) -> (Range<f32>, f32, f32) {
     let max_y = aggregates.max.1;
     let min_y = aggregates.min.1;
+
+    let minimum_max_y = 20.0 * localization.plot_limit_multiplier;
+    let max_y_step = 10.0 * localization.plot_limit_multiplier;
+    let min_y_step = 5.0 * localization.plot_limit_multiplier;
+
     // round max_y to the nearest 10 above, or 20 at least
-    let chart_max = if max_y > 20.0 {
-        (max_y / 10.0).ceil() * 10.0
+    let chart_max = if max_y > minimum_max_y {
+        (max_y / max_y_step).ceil() * max_y_step
     } else {
-        20.0
+        minimum_max_y
     };
 
-    // round min_y to the nearest 10 below, or 0 if min_y is positive
+    // round min_y to the nearest 5 below, or 0 if min_y is positive
     let chart_min = if min_y < 0.0 {
-        (min_y / 10.0).floor() * 10.0
+        (min_y / min_y_step).floor() * min_y_step
     } else {
         0.0
     };
 
-    (chart_min..chart_max, 5.0, 20.0)
+    // min_y_step is used also as the cheap color limit
+    (chart_min..chart_max, min_y_step, minimum_max_y)
 }
 
 pub fn plot(
@@ -49,9 +58,8 @@ pub fn plot(
     let root = BitMapBackend::new(filename, (1024, 1024)).into_drawing_area();
     root.fill(&WHITE)?;
 
-    let (chart_range, low, high) = calculate_limits(aggregates);
+    let (chart_range, low, high) = calculate_limits(aggregates, localization);
 
-    // Create a chart builder
     let mut chart = ChartBuilder::on(&root)
         .caption(title, ("sans-serif", 50).into_font())
         .margin(30)
@@ -61,7 +69,6 @@ pub fn plot(
 
     let label_style = ("sans-serif", 25).into_font();
 
-    // Configure the mesh
     chart
         .configure_mesh()
         .label_style(label_style.clone())
@@ -74,7 +81,6 @@ pub fn plot(
         .y_label_formatter(&|y| format!("{:.0}", y))
         .draw()?;
 
-    // Plot the data
     chart.draw_series(data.iter().map(|(ts, value)| {
         let x = ts.with_timezone(&localization.timezone).hour() as i32;
 
@@ -89,7 +95,6 @@ pub fn plot(
         bar
     }))?;
 
-    // Save the result
     root.present()?;
 
     Ok(())
